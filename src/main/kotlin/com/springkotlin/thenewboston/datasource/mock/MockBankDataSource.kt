@@ -12,4 +12,10 @@ class MockBankDataSource : BankDataSource {
     override fun retrieveBanks(): Collection<Bank> {
         return banksList
     }
+
+    override fun retrieveBank(accountNumber: String): Bank {
+        return banksList.first {
+            it.accountNumber == accountNumber
+        }
+    }
 }

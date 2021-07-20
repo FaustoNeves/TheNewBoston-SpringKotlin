@@ -5,6 +5,11 @@ import com.springkotlin.thenewboston.model.Bank
 import org.springframework.stereotype.Service
 
 @Service
-class BankService(private val dataSource: BankDataSource) {
-    fun getBanks(): Collection<Bank> = dataSource.retrieveBanks()
+class BankService(private val bankDataSource: BankDataSource) {
+
+    fun getBanks(): Collection<Bank> = bankDataSource.retrieveBanks()
+
+    fun getBank(accountNumber: String): Bank {
+        return bankDataSource.retrieveBank(accountNumber)
+    }
 }
