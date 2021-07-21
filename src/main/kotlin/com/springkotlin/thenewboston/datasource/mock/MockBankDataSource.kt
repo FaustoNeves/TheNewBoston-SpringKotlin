@@ -20,11 +20,39 @@ class MockBankDataSource : BankDataSource {
     }
 
     override fun insertBank(bank: Bank): Bank {
-        if (banksList.any { it.accountNumber == bank.accountNumber }) {
+        if (banksList.any {
+                it.accountNumber == bank.accountNumber
+            }) {
             throw IllegalArgumentException("Bank already registered")
         } else {
             banksList.add(bank)
+            return bank
         }
-        return bank
+    }
+
+    override fun updateBank(bank: Bank): Bank {
+        when {
+            banksList.any { it.accountNumber == bank.accountNumber && it.transactionFee == bank.transactionFee && it.trust == bank.trust } -> {
+                throw IllegalArgumentException("No updates have been made")
+            }
+            banksList.any { it.accountNumber == bank.accountNumber } -> {
+                banksList.find {
+                    it.accountNumber == bank.accountNumber
+                }.let {
+                    it?.trust = bank.trust
+                    it?.transactionFee = bank.transactionFee
+                }
+                return bank
+            }
+            else -> throw NoSuchElementException("Could not find a bank with account number ${bank.accountNumber}")
+        }
+
+        /**  Solution according to the tutorial
+         *        val currentBank = banksList.firstOrNull { it.accountNumber == bank.accountNumber }
+         *            ?: throw IllegalArgumentException("Could no update")
+         *        banksList.remove(currentBank)
+         *        banksList.add(bank)
+         *        return bank
+         */
     }
 }
