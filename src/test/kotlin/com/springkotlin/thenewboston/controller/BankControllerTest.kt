@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.servlet.*
 
 @SpringBootTest
@@ -27,15 +28,19 @@ internal class BankControllerTest @Autowired constructor(
     inner class GetBanks {
 
         @Test
+        @DirtiesContext
         fun `should return all banks`() {
+            val listOfBanks = listOf(
+                Bank("a", 1.1, 1),
+                Bank("b", 1.2, 2),
+                Bank("c", 1.3, 3)
+            )
+            postValidBank(listOfBanks)
             mockMVC.get(baseUrl)
                 .andDo { print() }
                 .andExpect {
                     status { isOk() }
-                    jsonPath("$[0].transactionFee") {
-                        isNumber()
-                        value(30)
-                    }
+                    content { json(objectMapper.writeValueAsString(listOfBanks)) }
                 }
         }
     }
@@ -46,9 +51,14 @@ internal class BankControllerTest @Autowired constructor(
     inner class GetBank {
 
         @Test
+        @DirtiesContext
         fun `should return the bank with given account number`() {
             //given
-            val accountNumber = "dfg"
+            val listOfBanks = listOf(
+                Bank("d", 3.0, 5)
+            )
+            postValidBank(listOfBanks)
+            val accountNumber = "d"
             //when
             mockMVC.get("$baseUrl/$accountNumber")
                 //then
@@ -57,7 +67,7 @@ internal class BankControllerTest @Autowired constructor(
                     status { isOk() }
                     content { contentType(MediaType.APPLICATION_JSON) }
                     jsonPath("$.transactionFee") {
-                        value(30)
+                        value(5)
                     }
                 }
         }
@@ -78,9 +88,11 @@ internal class BankControllerTest @Autowired constructor(
     @DisplayName("POST /api/banks")
     @TestInstance(Lifecycle.PER_CLASS)
     inner class PostNewBank {
+
         @Test
+        @DirtiesContext
         fun `should add new bank`() {
-            val newValidBank = Bank("hij", 12.15, 49)
+            val newValidBank = Bank("e", 12.15, 49)
             mockMVC.post(
                 baseUrl, dsl = {
                     contentType = MediaType.APPLICATION_JSON
@@ -112,7 +124,12 @@ internal class BankControllerTest @Autowired constructor(
         }
 
         @Test
+        @DirtiesContext
         fun `should return BAD REQUEST if bank already exists`() {
+            val listOfBanks = listOf(
+                Bank("abc", 12.50, 30)
+            )
+            postValidBank(listOfBanks)
             val invalidBank = Bank("abc", 12.50, 30)
             mockMVC.post(
                 baseUrl, dsl = {
@@ -130,10 +147,16 @@ internal class BankControllerTest @Autowired constructor(
     @DisplayName("PATCH /api/banks")
     @TestInstance(Lifecycle.PER_CLASS)
     inner class PatchExistingBank {
+
         @Test
+        @DirtiesContext
         fun `should update bank by accountNumber`() {
             //given
-            val bankToUpdate = Bank("abc", 25.00, 60)
+            val listOfBanks = listOf(
+                Bank("gni", 3.0, 5)
+            )
+            postValidBank(listOfBanks)
+            val bankToUpdate = Bank("gni", 25.00, 60)
             //when
             mockMVC.patch(baseUrl, dsl = {
                 contentType = MediaType.APPLICATION_JSON
@@ -172,9 +195,14 @@ internal class BankControllerTest @Autowired constructor(
     @DisplayName("DELETE /api/banks/{accoutNumber}")
     @TestInstance(Lifecycle.PER_CLASS)
     inner class DeleteExistingBank {
+
         @Test
         fun `should delete bank with respective account number`() {
             //given
+            val listOfBanks = listOf(
+                Bank("dfg", 3.0, 5)
+            )
+            postValidBank(listOfBanks)
             val accountNumber = "dfg"
             //when
             mockMVC.delete("$baseUrl/$accountNumber")
@@ -194,6 +222,16 @@ internal class BankControllerTest @Autowired constructor(
                 //then
                 .andDo { print() }
                 .andExpect { status { isNotFound() } }
+        }
+    }
+
+    fun postValidBank(listOfBanks: Collection<Bank>) {
+        for (bank in listOfBanks) {
+            mockMVC.post(
+                baseUrl, dsl = {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = objectMapper.writeValueAsString(Bank(bank.accountNumber, bank.trust, bank.transactionFee))
+                })
         }
     }
 }
